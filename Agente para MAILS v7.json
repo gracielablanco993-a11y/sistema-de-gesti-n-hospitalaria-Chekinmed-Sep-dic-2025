@@ -1,0 +1,219 @@
+{
+  "name": "Agente para MAILS v7",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Email"
+            },
+            {
+              "name": "Subject"
+            },
+            {
+              "name": "Body",
+              "type": "array"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        64
+      ],
+      "id": "0a630b4a-e7ac-4cbe-a7fb-b0fcaccdf104",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "content": "## Trigger",
+        "height": 224,
+        "width": 192,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "666f0b81-c047-4a42-b5b5-f6f205dc598d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "### Formateo de datos",
+        "height": 224,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        256,
+        0
+      ],
+      "id": "3b278d6b-15e7-4ee8-a3f8-ec5efd61832c",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Respuesta",
+        "height": 224,
+        "width": 192,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        0
+      ],
+      "id": "60be40d9-a7cf-4c3b-847b-0cf750b9ba52",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"status\": \"success\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        960,
+        64
+      ],
+      "id": "92a86551-79ec-47e8-a569-283e07e5e37e",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('When Executed by Another Workflow').item.json.Email }}",
+        "subject": "={{ $('When Executed by Another Workflow').item.json.Subject }}",
+        "message": "=<div style=\"text-align: center; padding-bottom: 20px;\">\n    <img src=\"https://drive.usercontent.google.com/download?id=1EO85ctQz1vSIsCZxBOy3eIiXSdE2h4-l&authuser=0\" \n         alt=\"Logo CheckinMed\" \n         style=\"max-width: 350px; height: auto; display: block; margin: 0 auto;\">\n</div>\n<hr style=\"border: 0; border-top: 1px solid #eee; margin-bottom: 20px;\">",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        704,
+        64
+      ],
+      "id": "d7eb1d81-5490-4ab7-acd7-7777b6ac3eaa",
+      "name": "Send a message1",
+      "webhookId": "cf29a891-bd1a-4b31-961b-be68d446bc90"
+    },
+    {
+      "parameters": {
+        "options": {
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        64
+      ],
+      "id": "63244b49-4c84-4ace-8d61-b0e80b2216a6",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "Body",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        304,
+        64
+      ],
+      "id": "eca1ea35-f36e-4273-a0a6-8c4710209682",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "content": "### Enviando Archivo",
+        "height": 224,
+        "width": 192,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        656,
+        0
+      ],
+      "id": "13d872f6-7ad1-490a-bf56-bb9f7f0562d9",
+      "name": "Sticky Note6"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "60589843-2695-4edd-bae6-8f546c412d90",
+  "meta": {
+    "instanceId": "9ab0a94b1b4f9f34addbbe773a7bbf032272204ed2b93b4fc1ecc2b6390f4cb7"
+  },
+  "id": "wNrMtJWmhrqijbYE",
+  "tags": []
+}

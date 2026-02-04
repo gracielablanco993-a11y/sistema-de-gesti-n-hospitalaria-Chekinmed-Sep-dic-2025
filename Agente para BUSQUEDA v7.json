@@ -1,0 +1,498 @@
+{
+  "name": "Agente para BUSQUEDA v7",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Agente",
+        "height": 224,
+        "width": 352,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        288
+      ],
+      "id": "b5be3f97-2b08-4b98-8b27-48c44c598dd7",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "\n",
+        "height": 224,
+        "width": 480,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        576
+      ],
+      "id": "22176d70-6c6c-41ae-acc2-283ca403ca4c",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Trigger",
+        "height": 224,
+        "width": 192,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        288
+      ],
+      "id": "ab96f740-cbbf-4f8d-87e7-9f15f046a250",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Query"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -288,
+        352
+      ],
+      "id": "d7fba20d-ac23-4f97-bd6c-b62c4cc9ce0b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.output.query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        640,
+        336
+      ],
+      "id": "d4fa5a4d-5776-4722-ba7a-239a3cd47835",
+      "name": "Execute a SQL query",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "### Base de datos",
+        "height": 224,
+        "width": 192,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        592,
+        288
+      ],
+      "id": "aad9b8a8-5ef7-4ae9-bba8-e49b9b7a2651",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Query }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres un asistente expeto en PostgreSQL. Tu Objetivo es:\n1. Recibir una pregunta o peticion en lenguaje natural sobre los datos de una base de datos de un hospital.\n2. Convertirla unica y exclusivamente en una instruccion SQL SELECT valida.\n3. No ejecutar nunca INSERT, UPDATE ni DELETE.\n4. Devolver la query unicamente, sin ningun agregado mas, por ejemplo \"SELECT * FROM Profesional\".\n5. Si la solicitud se puede responder con la DB, devuelve un JSON: {\"status\": \"success\", \"sql\": \"SELECT...\"}.\n6. Si la solicitud NO tiene relación con la DB o no existe esa info, devuelve: {\"status\": \"error\", \"message\": \"No puedo responder esto con la base de datos actual\"}.\n\nA continuacion tienes la **Estructura Completa** de tu base de datos (Tablas y Vistas). Usala para conocer nombres de tablas o vistas, columnas y tipos:\n\n####################################################################\nScript de creacion de tablas para hospital\n####################################################################\n\n# Cuando se te consulte acerca de obras sociales existentes accede a esta tabla\nCREATE TABLE IF NOT EXISTS Obra_social(\n  id_obra SERIAL PRIMARY KEY,\n  nombre VARCHAR(255) NOT NULL UNIQUE\n);\n\n# Cuando se te consulte acerca de la informacion de un o unos pacientes accede a esta vista\nCREATE OR REPLACE VIEW v_paciente AS\n  SELECT\n    p.id_paciente,\n    p.nombre,\n    p.apellido,\n    p.dni,\n    p.fecha_nacimiento,\n    p.num_afiliado,\n    p.num_domicilio,\n    p.calle_domicilio,\n    p.depto_domicilio,\n    l.nombre AS localidad,\n    gs.grupo AS grupo_sanguineo,\n    os.nombre AS obra_social\n  FROM\n    paciente p\n    INNER JOIN grupo_sanguineo gs ON gs.id_grupo = p.id_grupo_sanguineo\n    INNER JOIN obra_social os ON os.id_obra = p.id_obra_social\n    INNER JOIN localidad l ON l.id_localidad = p.id_localidad\n  ORDER BY\n    id_paciente;\n\n# Cuando se te consulte acerca de los impedimentos fisicos de un paciente accede a esta vista\nCREATE OR REPLACE VIEW v_paciente_impedimento AS\n  SELECT\n    p.id_paciente,\n    p.nombre,\n    p.apellido,\n    p.dni,\n    p.fecha_nacimiento,\n    p.num_afiliado,\n    if.nombre AS impedimento_fisico\n  FROM\n    paciente p\n    INNER JOIN paciente_impedimento pi ON pi.id_paciente = p.id_paciente\n    INNER JOIN impedimento_fisico if ON if.id_impedimento = pi.id_impedimento\n  ORDER BY\n    p.id_paciente;\n\n# Cuando se te consulte acerca de los medicamentos que consume un paciente accede a esta vista\nCREATE OR REPLACE VIEW v_paciente_medicamento AS\n  SELECT\n    p.id_paciente,\n    p.nombre,\n    p.apellido,\n    p.dni,\n    p.fecha_nacimiento,\n    p.num_afiliado,\n    m.nombre AS medicamento_recetado\n  FROM\n    paciente p\n    INNER JOIN paciente_medicamento pm ON pm.id_paciente = p.id_paciente\n    INNER JOIN medicamento m ON m.id_medicamento = pm.id_medicamento\n  ORDER BY\n    p.id_paciente;\n\n# Cuando se te consulte acerca de las alergias de un paciente accede a esta vista\nCREATE OR REPLACE VIEW v_paciente_alergia AS\n  SELECT\n    p.id_paciente,\n    p.nombre,\n    p.apellido,\n    p.dni,\n    p.fecha_nacimiento,\n    p.num_afiliado,\n    a.nombre AS alergia\n  FROM\n    paciente p\n    INNER JOIN paciente_alergia pa ON pa.id_paciente = p.id_paciente\n    INNER JOIN alergia a ON pa.id_alergia = pa.id_alergia\n  ORDER BY\n    p.id_paciente;\n\n------------------------------------------------------------------------------------------------------------\n\n# Cuando se te consulte acerca de la informacion de un o unos profesionales accede a esta vista\nCREATE OR REPLACE VIEW v_profesional AS\n  SELECT\n    p.legajo,\n    p.nombre,\n    p.apellido,\n    p.matricula,\n    p.email,\n    p.telefono,\n    p.fecha_contratacion,\n    pe.especialidades\n  FROM\n    profesional p\n    INNER JOIN v_profesional_especialidades pe ON pe.legajo_profesional = p.legajo\n  ORDER BY\n    legajo;\n\n------------------------------------------------------------------------------------------------------------\n\nCREATE TABLE IF NOT EXISTS Sector (\n\tid_sector SERIAL PRIMARY KEY,\n\tletra CHAR NOT NULL UNIQUE\n);\n\nCREATE TABLE IF NOT EXISTS Consultorio (\n\tnumero SERIAL PRIMARY KEY,\n\tid_sector INT,\n\tCONSTRAINT FK_sector_con FOREIGN KEY (id_sector) REFERENCES Sector (id_sector)\n);\n\nCREATE TABLE IF NOT EXISTS Equipamiento (\n\tid_equipamiento SERIAL PRIMARY KEY,\n\tnombre VARCHAR(255) NOT NULL UNIQUE\n);\n\nCREATE TABLE IF NOT EXISTS Consultorio_equipamiento (\n\tnum_consultorio INT,\n\tid_equipamiento INT,\n\tCONSTRAINT FK_consultorio_con_equip FOREIGN KEY (num_consultorio) REFERENCES Consultorio (numero),\n\tCONSTRAINT FK_equipamiento_con_equip FOREIGN KEY (id_equipamiento) REFERENCES Equipamiento (id_equipamiento),\n\tCONSTRAINT PK_consultorio_equipamiento PRIMARY KEY (num_consultorio,id_equipamiento)\n);\n\n------------------------------------------------------------------------------------------------------------\n\n# Cuando se te consulte acerca de la informacion de un o unos turnos medicos accede a esta vista\nCREATE OR REPLACE VIEW v_turno AS\n  SELECT\n    t.id_turno,\n    t.fecha,\n    t.hora,\n    pa.nombre AS nombre_paciente,\n    pa.apellido AS apellido_paciente,\n    pa.dni AS dni_paciente,\n    pro.apellido AS profesional,\n    pro.matricula AS matricula_profesional,\n    pe.especialidades AS especialidades_profesional,\n    t.num_consultorio,\n    s.letra AS sector_consultorio,\n    et.estado AS estado_turno\n  FROM\n    turno t\n    INNER JOIN paciente pa ON pa.id_paciente = t.id_paciente\n    --\n    INNER JOIN profesional pro ON pro.legajo = t.legajo_profesional\n    INNER JOIN v_profesional_especialidades pe ON pe.legajo_profesional = pro.legajo\n    --\n    INNER JOIN estado_turno et ON et.id_estado = t.id_estado\n    --\n    INNER JOIN consultorio c ON c.numero = t.num_consultorio\n    INNER JOIN sector s ON s.id_sector = c.id_sector\n  ORDER BY\n    id_turno;\n\n# Cuando se te consulte acerca de la historia clinica de algun paciente accede a esta tabla\nCREATE TABLE IF NOT EXISTS Historia_clinica (\n\tid_historiaClinica SERIAL PRIMARY KEY,\n\tid_paciente INT NOT NULL,\n\tid_turno INT,\n\tfecha DATE,\n\tobservacion TEXT,\n\tCONSTRAINT FK_paciente_historia FOREIGN KEY (id_paciente) REFERENCES Paciente (id_paciente),\n\tCONSTRAINT FK_turno_historia FOREIGN KEY (id_turno) REFERENCES Turno (id_turno)\n);\n\n------------------------------------------------------------------------------------------------------------\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -16,
+        352
+      ],
+      "id": "2bf31669-f81a-4c34-8814-0fa455888743",
+      "name": "Search Agent"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.status }}",
+                    "rightValue": "Success",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "de5d536b-cdf6-42af-8aee-131fe0b2fcc4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Success"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ad36c8b7-cfec-4572-bd4b-d3ca55f103b3",
+                    "leftValue": "={{ $json.output.status }}",
+                    "rightValue": "Error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Error"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        384,
+        352
+      ],
+      "id": "6d8166de-4549-4bc5-a5ba-ac010e6ef0f1",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a8a5ba2d-df38-4ca5-aeba-f6465ac49917",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        336
+      ],
+      "id": "f3d6d890-1144-488f-bb5a-679eec5dc523",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "### Detector de error",
+        "height": 224,
+        "width": 192,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        336,
+        288
+      ],
+      "id": "05a619cb-b9f1-48f7-8bd0-74fddfb7df81",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "### Detector de error",
+        "height": 224,
+        "width": 192,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        848,
+        288
+      ],
+      "id": "589db4f4-0a4b-4827-873a-8a4ea2bc0162",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "### Salida Vacia",
+        "height": 224,
+        "width": 192,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        848,
+        576
+      ],
+      "id": "5e6cfb91-578a-46db-8cf1-876189a4bc78",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"status\": {\n\t\t\t\"type\": \"string\",\n            \"description\": \"Enrutamiento: 'Success' si se logro realizar una query correctamente; 'Error' si no se pudo realizar una query con normalidad\",\n            \"enum\": [\"Success\", \"Error\"]\n\t\t},\n\t\t\"query\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"descripcion\": \"query formada en base a la consulta solicitada\"\n\t\t}\n\t},\n    \"required\": [\"status\",\"query\"],\n    \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        624
+      ],
+      "id": "47f60262-da0d-4b7e-893f-fbd4ff71bbc9",
+      "name": "Output Parser"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"output_query\": \"[]\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        640
+      ],
+      "id": "65a73bcb-ff0c-4228-913b-0f370906387d",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "output_query",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        352
+      ],
+      "id": "d0f5818c-1fe2-4f20-85f3-b391b8ac9154",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "content": "### Salida",
+        "height": 224,
+        "width": 192,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        288
+      ],
+      "id": "e1eff945-8431-427d-a67c-0a54bc77242a",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        64,
+        64
+      ],
+      "id": "ae4d4ab8-7c8e-45c7-ac12-d022ec3b768d",
+      "name": "Google Gemini Chat Model Search"
+    },
+    {
+      "parameters": {
+        "content": "\n",
+        "height": 224,
+        "width": 192,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "05d285f8-f628-4f70-9e97-56bf4c79559a",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        624
+      ],
+      "id": "86acd07f-1818-4c0f-9dd4-4d98dda9bffb",
+      "name": "Google Gemini Chat Model Parser"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Query": "la informacion de los turnos del profesional cabrera"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Search Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Agent": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Search Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model Search": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Search Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model Parser": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "79134cb5-b0ed-42b6-9bd8-7860f2d11bab",
+  "meta": {
+    "instanceId": "9ab0a94b1b4f9f34addbbe773a7bbf032272204ed2b93b4fc1ecc2b6390f4cb7"
+  },
+  "id": "Gdks7t2OR3fegpnN",
+  "tags": []
+}
